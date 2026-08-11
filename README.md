@@ -2,7 +2,7 @@
 
 **One small tool for rideshare drivers, built from one driver's own trip data.**
 
-### **[→ Open Redline](https://bruffsaluteme.github.io/redline/)**
+### **[→ Open Redline](https://bruffsaluteme.github.io/Redline/)**
 
 *v0.2.3 · early field test · free, nothing to install, works offline once loaded*
 
