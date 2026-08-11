@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#10151C">
+<title>Redline — is this ride worth it? — v0.2.3</title>
+<style>
+  :root{
+    --night:#10151C; --panel:#171E27; --edge:#242E3A;
+    --lamp:#F2E4C9; --dim:#8A9099;
+    --redline:#E03A2F; --thin:#E8A33D; --go:#4FB477; --track:#0B1016;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--night);color:var(--lamp)}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-variant-numeric:tabular-nums;
+    padding:max(14px,env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+    max-width:520px;margin:0 auto;-webkit-text-size-adjust:100%;
+  }
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .mark{font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  .mark span{color:var(--redline)}
+  .sub{font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:right;line-height:1.35}
+
+  .modes{display:flex;gap:8px;margin-bottom:14px}
+  .modes button{flex:1;background:transparent;border:1px solid var(--edge);color:var(--dim);
+    border-radius:10px;padding:12px 8px;font:700 11px/1.25 system-ui,sans-serif;
+    letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+  .modes button[aria-pressed="true"]{border-color:var(--lamp);color:var(--lamp)}
+  .modes small{display:block;font-weight:500;letter-spacing:.02em;text-transform:none;
+    opacity:.6;margin-top:4px;font-size:10px}
+
+  .readout{background:var(--panel);border:1px solid var(--edge);border-radius:14px;
+           padding:20px 18px 18px;margin-bottom:14px}
+  .verdict{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--dim);margin-bottom:12px;transition:color .25s}
+  .big{display:flex;align-items:flex-end;gap:8px;line-height:.86}
+  .big b{font-size:clamp(48px,16vw,72px);font-weight:800;letter-spacing:-.035em}
+  .big i{font-style:normal;font-size:12px;color:var(--dim);letter-spacing:.07em;
+         text-transform:uppercase;padding-bottom:7px;max-width:118px;line-height:1.3}
+
+  .gauge{margin-top:22px}
+  .track{position:relative;height:16px;border-radius:3px;overflow:hidden;
+         background:var(--track);border:1px solid var(--edge)}
+  .band{position:absolute;top:0;bottom:0}
+  .needle{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--lamp);
+    border-radius:2px;left:0;transform:translateX(-1.5px);
+    transition:left .35s cubic-bezier(.22,.9,.3,1);box-shadow:0 0 0 1px var(--night)}
+  .ticks{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;
+         color:var(--dim);letter-spacing:.05em}
+  .legend{margin-top:14px;font-size:12px;color:var(--dim);line-height:1.5}
+  .legend b{color:var(--lamp);font-weight:600}
+
+  form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label{display:block}
+  label.wide{grid-column:1 / -1}
+  label.hide{display:none}
+  .cap{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+       color:var(--dim);margin-bottom:6px}
+  .cap em{font-style:normal;text-transform:none;letter-spacing:0;opacity:.75}
+  input{width:100%;background:var(--panel);border:1px solid var(--edge);color:var(--lamp);
+    border-radius:11px;padding:14px 13px;
+    font:600 21px/1 system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums}
+  input:focus{outline:2px solid var(--lamp);outline-offset:1px;border-color:transparent}
+  input::placeholder{color:#4A525C;font-weight:500}
+
+  .rowbtns{grid-column:1 / -1;display:flex;gap:8px;margin-top:2px}
+  .rowbtns.hide{display:none}
+  .rowbtns button{flex:1;background:transparent;border:1px solid var(--edge);color:var(--dim);
+    border-radius:10px;padding:11px 8px;font:600 12px/1 system-ui,sans-serif;
+    letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .rowbtns button[aria-pressed="true"]{border-color:var(--lamp);color:var(--lamp)}
+
+  .second{grid-column:1 / -1;display:flex;justify-content:space-between;gap:12px;
+          border-top:1px solid var(--edge);margin-top:16px;padding-top:14px}
+  .stat{flex:1}
+  .stat b{display:block;font-size:20px;font-weight:700;letter-spacing:-.02em}
+  .stat span{display:block;font-size:10px;color:var(--dim);letter-spacing:.08em;
+    text-transform:uppercase;margin-top:4px;line-height:1.3}
+
+  footer{margin-top:20px;font-size:11px;color:var(--dim);line-height:1.6}
+  footer b{color:#B9BEC5;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.needle{transition:none}}
+</style>
+</head>
+<body>
+
+<noscript>
+  <div style="border:2px solid #E03A2F;border-radius:12px;padding:14px;margin-bottom:16px;color:#E03A2F;font-size:13px;line-height:1.55">
+    <b>This page can't run here.</b><br>
+    You're viewing the file in a preview that blocks scripts, so nothing will calculate.
+    Open it in <b>Safari</b> instead, or use the web link.
+  </div>
+</noscript>
+
+<header>
+  <div class="mark">RED<span>LINE</span></div>
+  <div class="sub">what a ride really pays<br>once you count the drive after</div>
+</header>
+
+<div class="modes">
+  <button type="button" id="mShift" aria-pressed="true">Mid-shift
+    <small>you're staying out — empty miles cost you fares</small></button>
+  <button type="button" id="mLast" aria-pressed="false">Last ride
+    <small>you're going home after — empty miles cost gas</small></button>
+</div>
+
+<div class="readout">
+  <div class="verdict" id="verdict">enter a fare</div>
+  <div class="big"><b id="hero">—</b><i id="heroCap">per mile you actually drive</i></div>
+
+  <div class="gauge">
+    <div class="track" role="img" aria-label="rate scale" id="track">
+      <div class="band" id="bandA"></div>
+      <div class="band" id="bandB"></div>
+      <div class="band" id="bandC"></div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="ticks" id="ticks"></div>
+    <p class="legend" id="legend"></p>
+  </div>
+</div>
+
+<form onsubmit="return false">
+  <label>
+    <span class="cap">Fare</span>
+    <input id="fare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="113.13">
+  </label>
+  <label>
+    <span class="cap">Trip miles</span>
+    <input id="miles" type="number" inputmode="decimal" step="0.1" min="0" placeholder="106.7">
+  </label>
+
+  <label class="wide">
+    <span class="cap" id="backCap">Empty miles after <em>— how far you drive before anyone pays you again</em></span>
+    <input id="back" type="number" inputmode="decimal" step="0.1" min="0" placeholder="106.7">
+  </label>
+
+  <div class="rowbtns" id="quickRow">
+    <button type="button" id="bSame" aria-pressed="true">all the way back</button>
+    <button type="button" id="bHalf" aria-pressed="false">halfway</button>
+    <button type="button" id="bNone" aria-pressed="false">ride waiting</button>
+  </div>
+
+  <label class="wide hide" id="costWrap">
+    <span class="cap">Your cost per mile <em>— gas, tires, wear. Hybrid ≈ $0.18, gas car ≈ $0.28</em></span>
+    <input id="cost" type="number" inputmode="decimal" step="0.01" min="0" value="0.22">
+  </label>
+
+  <label class="wide">
+    <span class="cap">Minutes <em>— optional, count the empty drive too</em></span>
+    <input id="mins" type="number" inputmode="numeric" step="1" min="0" placeholder="220">
+  </label>
+
+  <div class="rowbtns" style="margin-top:4px">
+    <button type="button" id="calc" style="border-color:var(--lamp);color:var(--night);background:var(--lamp);font-weight:700;padding:15px 8px">Calculate</button>
+  </div>
+
+  <div class="second">
+    <div class="stat"><b id="s1">—</b><span id="c1">per paid mile</span></div>
+    <div class="stat"><b id="s2">—</b><span id="c2">per all-in hour</span></div>
+    <div class="stat"><b id="s3">—</b><span id="c3">total miles</span></div>
+  </div>
+</form>
+
+<p style="margin:14px 0 0;padding:11px 13px;border:1px solid #E8A33D;border-radius:10px;color:#E8A33D;font-size:12px;line-height:1.5"><b>Use this parked.</b> Check a ride before you accept it, or after you drop off. Not while you are moving.</p>
+
+<footer id="foot"></footer>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const fare=$('fare'), miles=$('miles'), back=$('back'), mins=$('mins'), cost=$('cost');
+  const quick = {same:$('bSame'), half:$('bHalf'), none:$('bNone')};
+  let lastRide = false, quickMode = 'same', backTouched = false;
+
+  const money = n => '$' + n.toFixed(2);
+  const num = el => { const v = parseFloat(el.value); return isFinite(v) ? v : NaN; };
+  const or  = (v,d) => isFinite(v) ? v : d;
+
+  const FOOT_SHIFT = `<b>Mid-shift.</b> Every empty mile is a mile you could have been earning, so
+    the fare gets spread across the whole distance. Uber pays you for the miles with somebody in the
+    car — your gas, tires, brakes and resale value don't know the difference.
+    <br><br><b>Empty miles after</b> is however far you drive before the next fare starts. Back to the
+    airport, over to a busier area, or zero if a ride's already waiting.
+    <br><br>Scale from measured Detroit airport trips: a $143 run to Bay City came out to
+    <b>$0.63</b> a mile. An $18 drop to Wayne came out to <b>$1.52</b>. The big fare was the worse ride.`;
+
+  const FOOT_LAST = `<b>Last ride of the night.</b> Now the empty drive isn't costing you fares —
+    there's nothing left to earn. It's only costing you gas and wear. So this mode stops charging the
+    return against your rate and just subtracts what the drive actually costs.
+    <br><br>That's why a long haul can be a bad mid-shift ride and a fine way to end the night.
+    Same fare, different slot, different answer.
+    <br><br><b>Watch the clock, not just the money.</b> A big late run can pay well and still cost you
+    tomorrow morning. This tool prices the car. It can't price your sleep.`;
+
+  function setQuick(k){
+    quickMode = k; backTouched = false;
+    for (const key in quick) quick[key].setAttribute('aria-pressed', String(key===k));
+    syncBack(); render();
+  }
+  quick.same.onclick = ()=>setQuick('same');
+  quick.half.onclick = ()=>setQuick('half');
+  quick.none.onclick = ()=>setQuick('none');
+
+  function syncBack(){
+    if (backTouched) return;
+    const m = parseFloat(miles.value);
+    if (!isFinite(m)) { back.value=''; return; }
+    back.value = quickMode==='same' ? m.toFixed(1)
+               : quickMode==='half' ? (m/2).toFixed(1) : '0';
+  }
+
+  function setMode(last){
+    lastRide = last;
+    $('mLast').setAttribute('aria-pressed', String(last));
+    $('mShift').setAttribute('aria-pressed', String(!last));
+    $('costWrap').classList.toggle('hide', !last);
+    $('quickRow').classList.toggle('hide', last);
+    $('backCap').innerHTML = last
+      ? 'Miles home after the drop <em>— the empty drive you are making anyway</em>'
+      : 'Empty miles after <em>— how far you drive before anyone pays you again</em>';
+    $('foot').innerHTML = last ? FOOT_LAST : FOOT_SHIFT;
+    if (last && !backTouched) syncBack();
+    render();
+  }
+  $('mShift').onclick = ()=>setMode(false);
+  $('mLast').onclick  = ()=>setMode(true);
+
+  back.addEventListener('input', ()=>{ backTouched = true; render(); });
+  miles.addEventListener('input', ()=>{ syncBack(); render(); });
+  [fare, mins, cost].forEach(el => el.addEventListener('input', render));
+
+  function bands(a,b){
+    $('bandA').style.cssText = `left:0;width:${a}%;background:rgba(224,58,47,.5)`;
+    $('bandB').style.cssText = `left:${a}%;width:${b-a}%;background:rgba(232,163,61,.42)`;
+    $('bandC').style.cssText = `left:${b}%;right:0;background:rgba(79,180,119,.3)`;
+  }
+
+  function blank(){
+    ['hero','s1','s2','s3'].forEach(i => $(i).textContent = '—');
+    $('verdict').textContent = 'enter a fare';
+    $('verdict').style.color = 'var(--dim)';
+    $('needle').style.left = '0%';
+  }
+
+  function render(){
+    const F = num(fare), M = num(miles), B = or(num(back),0), T = num(mins), C = or(num(cost),0.22);
+    const ok = isFinite(F) && F>0 && isFinite(M) && M>0;
+
+    if (lastRide){
+      $('ticks').innerHTML = '<span>0%</span><span>60%</span><span>80%</span><span>100%</span>';
+      bands(28,45);
+      $('heroCap').textContent = 'you keep, after the drive home';
+      $('c1').textContent = 'cost of driving home';
+      $('c2').textContent = 'per paid mile';
+      $('c3').textContent = 'share of fare kept';
+      $('legend').innerHTML = 'Keeping under <b>60%</b> of the fare means the drive home ate it. '
+        + 'Over <b>80%</b> is a clean finish <em>on money</em>. '
+        + '<b>This scores the cash only — what hour it ends at is your call.</b>';
+    } else {
+      $('ticks').innerHTML = '<span>$0</span><span>$0.55</span><span>$0.75</span><span>$1.50+</span>';
+      bands(28,45);
+      $('heroCap').textContent = 'per mile you actually drive';
+      $('c1').textContent = 'per paid mile';
+      $('c2').textContent = 'per all-in hour';
+      $('c3').textContent = 'total miles';
+      $('legend').innerHTML = 'Below <b>$0.55</b> a mile the ride is in the red. '
+        + 'Above <b>$0.75</b> it pays.';
+    }
+
+    if (!ok){ blank(); return; }
+
+    if (lastRide){
+      const driveCost = B * C;
+      const net = F - driveCost;
+      const kept = net / F;
+      $('hero').textContent = money(net);
+      $('s1').textContent = money(driveCost);
+      $('s2').textContent = money(F / M);
+      $('s3').textContent = (kept*100).toFixed(0) + '%';
+
+      let word, color;
+      if (kept < 0.60)      { word='the drive ate it'; color='var(--redline)'; }
+      else if (kept < 0.80) { word='fair way to close'; color='var(--thin)'; }
+      else                  { word='clean finish';     color='var(--go)'; }
+      $('verdict').textContent = word;
+      $('verdict').style.color = color;
+
+      const pct = kept <= 0.60 ? (kept/0.60)*28
+                : kept <= 0.80 ? 28 + ((kept-0.60)/0.20)*17
+                : Math.min(100, 45 + ((kept-0.80)/0.20)*55);
+      $('needle').style.left = Math.max(0,pct).toFixed(1) + '%';
+      return;
+    }
+
+    const total = M + B;
+    const r = F / total;
+    $('hero').textContent = money(r);
+    $('s1').textContent = money(F / M);
+    $('s2').textContent = (isFinite(T) && T>0) ? money(F/(T/60)) : '—';
+    $('s3').textContent = total.toFixed(1);
+
+    let word, color;
+    if (r < 0.55)      { word='in the red'; color='var(--redline)'; }
+    else if (r < 0.75) { word='thin';       color='var(--thin)'; }
+    else if (r < 1.10) { word='it pays';    color='var(--go)'; }
+    else               { word='take it';    color='var(--go)'; }
+    $('verdict').textContent = word;
+    $('verdict').style.color = color;
+
+    const pct = r <= 0.55 ? (r/0.55)*28
+              : r <= 0.75 ? 28 + ((r-0.55)/0.20)*17
+              : Math.min(100, 45 + ((r-0.75)/0.75)*55);
+    $('needle').style.left = pct.toFixed(1) + '%';
+  }
+
+  // explicit action, and a change-event fallback for keyboards that
+  // do not fire input events reliably
+  $('calc').onclick = render;
+  [fare, miles, back, mins, cost].forEach(el => el.addEventListener('change', render));
+
+  // second binding path for the mode buttons in case onclick is not honoured
+  $('mShift').addEventListener('click', ()=>setMode(false));
+  $('mLast').addEventListener('click',  ()=>setMode(true));
+  quick.same.addEventListener('click', ()=>setQuick('same'));
+  quick.half.addEventListener('click', ()=>setQuick('half'));
+  quick.none.addEventListener('click', ()=>setQuick('none'));
+
+  setQuick('same');
+  setMode(false);
+})();
+</script>
+</body>
+</html>
