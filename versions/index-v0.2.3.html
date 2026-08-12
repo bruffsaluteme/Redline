@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#10151C">
-<title>Redline — is this ride worth it? — v0.3</title>
+<title>Redline — is this ride worth it? — v0.2.3</title>
 <style>
   :root{
     --night:#10151C; --panel:#171E27; --edge:#242E3A;
@@ -147,12 +147,12 @@
   </div>
 
   <label class="wide hide" id="costWrap">
-    <span class="cap">Your cost per mile <em>— fuel + basic wear only. Hybrid ≈ $0.18, gas car ≈ $0.28. With insurance, car payment and depreciation the real figure is nearer $0.32–0.45</em></span>
+    <span class="cap">Your cost per mile <em>— gas, tires, wear. Hybrid ≈ $0.18, gas car ≈ $0.28</em></span>
     <input id="cost" type="number" inputmode="decimal" step="0.01" min="0" value="0.22">
   </label>
 
   <label class="wide">
-    <span class="cap">Minutes <em>— needed for the hourly figure. Count the empty drive too</em></span>
+    <span class="cap">Minutes <em>— optional, count the empty drive too</em></span>
     <input id="mins" type="number" inputmode="numeric" step="1" min="0" placeholder="220">
   </label>
 
@@ -302,10 +302,7 @@
     const r = F / total;
     $('hero').textContent = money(r);
     $('s1').textContent = money(F / M);
-    // needs time, unlike the other two tiles. Say so rather than sitting blank.
-    const hasTime = isFinite(T) && T > 0;
-    $('s2').textContent = hasTime ? money(F/(T/60)) : '—';
-    $('c2').textContent = hasTime ? 'per all-in hour' : 'add minutes to see this';
+    $('s2').textContent = (isFinite(T) && T>0) ? money(F/(T/60)) : '—';
     $('s3').textContent = total.toFixed(1);
 
     let word, color;

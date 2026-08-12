@@ -4,7 +4,7 @@
 
 ### **[→ Open Redline](https://bruffsaluteme.github.io/Redline/)**
 
-*v0.2.3 · early field test · free, nothing to install, works offline once loaded*
+*v0.3 · early field test · free, nothing to install, works offline once loaded*
 
 ---
 
@@ -125,7 +125,7 @@ If you drive, try it and tell me where it's wrong.
 
 ## Status and license
 
-**Early field test — v0.2.3.** Expect the thresholds to move as drivers report back. A companion tool for airport queue-wait decisions exists but is deliberately unreleased until this one has been used by somebody other than me.
+**Early field test — v0.3.** Expect the thresholds to move as drivers report back. A companion tool for airport queue-wait decisions exists but is deliberately unreleased until this one has been used by somebody other than me.
 
 Copyright © 2026 Brandon Ruffin. **All rights reserved** — see `NOTICE.md`. No open-source license yet — I'd rather see how this holds up with real drivers before deciding how it should be reused. Publishing publicly on GitHub does allow other GitHub users to view and fork the repository; that's a condition of the platform, not a broader grant.
 
